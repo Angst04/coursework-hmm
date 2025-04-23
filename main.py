@@ -80,6 +80,8 @@ class MainApp(tk.Tk):
         self.style.configure('TFrame', background='#f0f0f0')
         self.style.configure('TButton', font=('Arial', 10))
         self.style.configure('TLabel', font=('Arial', 10))
+        self.window_1d = None
+        self.window_2d = None
 
     def create_dirs(self):
         os.makedirs('help', exist_ok=True)
@@ -288,6 +290,8 @@ class MainApp(tk.Tk):
             )
 
     def open_2d(self):
+        if self.window_2d:
+            self.window_2d.destroy()
         self.window_2d = tk.Toplevel(self)
         self.window_2d.title("2D: Ker(X*Y - X+Y)")
         self.window_2d.configure(bg='#f0f0f0')
