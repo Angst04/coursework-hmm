@@ -81,7 +81,6 @@ class MainApp(tk.Tk):
         self.geometry("800x600")
         self.db = Database()
         self.create_menu()
-        self.create_dirs()
         self.create_welcome_screen()
         self.style = ttk.Style()
         self.style.configure('TFrame', background='#f0f0f0')
@@ -123,10 +122,6 @@ class MainApp(tk.Tk):
         text.insert(tk.END, description)
         text.config(state=tk.DISABLED)
         text.pack(fill=tk.BOTH, expand=True)
-
-    def create_dirs(self):
-        os.makedirs('help', exist_ok=True)
-        os.makedirs('source', exist_ok=True)
 
     def create_menu(self):
         menu = tk.Menu(self)
