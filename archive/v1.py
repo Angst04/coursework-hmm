@@ -7,9 +7,11 @@ import os
 class DataHandler:
     @staticmethod
     def is_prime(n):
-        if n < 2: return False
+        if n < 2: 
+            return False
         for i in range(2, int(math.sqrt(n)) + 1):
-            if n % i == 0: return False
+            if n % i == 0: 
+                return False
         return True
 
     @staticmethod
@@ -68,14 +70,18 @@ class HMM:
     def hmm_dn(data, mod):
         return [[v % mod for v in row] for row in data]
 
+    @staticmethod
+    def hmm_r(data, a, b):
+        return [[(a * x + b * y) % 10 for y in row] for x, row in enumerate(data)]
+
 class MainApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Хромоматематическое моделирование")
-        self.geometry("1200x800")
+        self.geometry("800x600")
         self.db = Database()
         self.create_menu()
-        self.create_dirs()
+        self.create_welcome_screen()
         self.style = ttk.Style()
         self.style.configure('TFrame', background='#f0f0f0')
         self.style.configure('TButton', font=('Arial', 10))
@@ -83,25 +89,52 @@ class MainApp(tk.Tk):
         self.window_1d = None
         self.window_2d = None
 
-    def create_dirs(self):
-        os.makedirs('help', exist_ok=True)
-        os.makedirs('source', exist_ok=True)
+    def create_welcome_screen(self):
+        main_frame = ttk.Frame(self)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        description = """Программа для хромоматематического моделирования
+
+        1. Объект 1D: Полупростые числа
+        Визуализации:
+        - Спираль Улама
+        - Гистограмма
+        - Замощение плоскости
+        - Точечный график
+
+        Модели:
+        - HMM_N (модульная арифметика)
+        - HMM_B (биградиентная модель)
+
+        2. Объект 2D: Ker(X*Y - X+Y)
+        Визуализации:
+        - Тепловая карта
+        - Контурная карта
+        - 3D-поверхность
+        - Градиентная карта
+
+        Модели:
+        - HMM_DN (дискретная модель)
+        - HMM_R (мультиградиентная модель)"""
+        
+        text = tk.Text(main_frame, wrap=tk.WORD, font=('Arial', 12), 
+                      padx=10, pady=10, height=25)
+        text.insert(tk.END, description)
+        text.config(state=tk.DISABLED)
+        text.pack(fill=tk.BOTH, expand=True)
 
     def create_menu(self):
         menu = tk.Menu(self)
         
-        # Меню данных
         data_menu = tk.Menu(menu, tearoff=0)
         data_menu.add_command(label="Сгенерировать данные", command=self.generate_data)
         menu.add_cascade(label="Данные", menu=data_menu)
         
-        # Меню форм
         forms_menu = tk.Menu(menu, tearoff=0)
         forms_menu.add_command(label="1D: Полупростые числа", command=self.open_1d)
         forms_menu.add_command(label="2D: Ker(X*Y - X+Y)", command=self.open_2d)
         menu.add_cascade(label="Формы", menu=forms_menu)
         
-        # Справка
         help_menu = tk.Menu(menu, tearoff=0)
         help_menu.add_command(label="О программе", command=self.show_about)
         help_menu.add_command(label="Справка", command=self.show_help)
@@ -110,11 +143,9 @@ class MainApp(tk.Tk):
         self.config(menu=menu)
 
     def generate_data(self):
-        # Генерация 1D данных
         semiprimes = DataHandler.generate_semiprimes(1000)
         self.db.save_semiprimes(semiprimes)
         
-        # Генерация 2D данных
         data = []
         for x in range(-50, 50):
             row = []
@@ -127,15 +158,15 @@ class MainApp(tk.Tk):
         messagebox.showinfo("Успех", "Данные успешно сгенерированы!")
 
     def open_1d(self):
+        if self.window_1d:
+            self.window_1d.destroy()
         self.window_1d = tk.Toplevel(self)
         self.window_1d.title("1D: Полупростые числа")
         self.window_1d.configure(bg='#f0f0f0')
         
-        # Получение данных
         self.db.cursor.execute("SELECT value FROM semiprimes")
         self.data_1d = [row[0] for row in self.db.cursor.fetchall()]
         
-        # Панель управления
         control_frame = ttk.Frame(self.window_1d)
         control_frame.pack(fill=tk.X, padx=10, pady=10)
         
@@ -152,25 +183,20 @@ class MainApp(tk.Tk):
         ttk.Button(control_frame, text="Применить", 
                   command=self.update_1d_viz).grid(row=0, column=4, padx=5)
         
-        # Визуализации
         self.tab_control_1d = ttk.Notebook(self.window_1d)
         
-        # Спираль Улама
         self.spiral_frame = ttk.Frame(self.tab_control_1d)
         self.draw_spiral(self.spiral_frame, self.data_1d)
         self.tab_control_1d.add(self.spiral_frame, text="Спираль Улама")
         
-        # Гистограмма
         self.hist_frame = ttk.Frame(self.tab_control_1d)
         self.draw_histogram(self.hist_frame, self.data_1d)
         self.tab_control_1d.add(self.hist_frame, text="Гистограмма")
         
-        # Замощение
         self.tiling_frame = ttk.Frame(self.tab_control_1d)
         self.draw_tiling(self.tiling_frame, self.data_1d)
         self.tab_control_1d.add(self.tiling_frame, text="Замощение")
         
-        # Точечный график
         self.scatter_frame = ttk.Frame(self.tab_control_1d)
         self.draw_scatter(self.scatter_frame, self.data_1d)
         self.tab_control_1d.add(self.scatter_frame, text="Точечный график")
@@ -191,25 +217,20 @@ class MainApp(tk.Tk):
             else:
                 processed_data = self.data_1d
             
-            # Обновление всех визуализаций
-            self.clear_frame(self.spiral_frame)
             self.draw_spiral(self.spiral_frame, processed_data)
-            
-            self.clear_frame(self.hist_frame)
             self.draw_histogram(self.hist_frame, processed_data)
-            
-            self.clear_frame(self.tiling_frame)
             self.draw_tiling(self.tiling_frame, processed_data)
-            
-            self.clear_frame(self.scatter_frame)
             self.draw_scatter(self.scatter_frame, processed_data)
             
         except ValueError:
             messagebox.showerror("Ошибка", "Введите корректный числовой параметр")
 
     def draw_spiral(self, parent, data):
+        for widget in parent.winfo_children():
+            widget.destroy()
+        
         canvas = tk.Canvas(parent, width=600, height=600, bg='white')
-        canvas.pack()
+        canvas.pack(pady=10)
         
         center_x, center_y = 300, 300
         step = 5
@@ -229,12 +250,17 @@ class MainApp(tk.Tk):
             
             x, y = x + dx, y + dy
         
-        # Добавление подписей
-        canvas.create_text(300, 580, text="Спираль Улама", font=('Arial', 12))
+        desc_frame = ttk.Frame(parent)
+        desc_frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(desc_frame, text="Спираль Улама: Визуализация распределения полупростых чисел на спиральной координатной сетке", 
+                 wraplength=580, justify=tk.LEFT, foreground="#666").pack()
 
     def draw_histogram(self, parent, data):
+        for widget in parent.winfo_children():
+            widget.destroy()
+        
         canvas = tk.Canvas(parent, width=600, height=400, bg='white')
-        canvas.pack()
+        canvas.pack(pady=10)
         
         max_val = max(data) if data else 1
         bin_count = 20
@@ -253,13 +279,19 @@ class MainApp(tk.Tk):
                 outline="#2980b9"
             )
         
-        # Оси и подписи
-        canvas.create_line(0, 380, 600, 380, fill="black")  # Ось X
-        canvas.create_text(300, 395, text="Значения", font=('Arial', 10))
+        canvas.create_line(0, 380, 600, 380, fill="black")
+        
+        desc_frame = ttk.Frame(parent)
+        desc_frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(desc_frame, text="Гистограмма: Показывает распределение значений полупростых чисел по диапазонам", 
+                 wraplength=580, justify=tk.LEFT, foreground="#666").pack()
 
     def draw_tiling(self, parent, data):
+        for widget in parent.winfo_children():
+            widget.destroy()
+        
         canvas = tk.Canvas(parent, width=600, height=600, bg='white')
-        canvas.pack()
+        canvas.pack(pady=10)
         
         size = 20
         colors = ['#e74c3c', '#2ecc71', '#9b59b6', '#f1c40f']
@@ -273,10 +305,18 @@ class MainApp(tk.Tk):
                 fill=color, 
                 outline="#34495e"
             )
+        
+        desc_frame = ttk.Frame(parent)
+        desc_frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(desc_frame, text="Замощение: Числа представлены цветными плитками, формирующими узор на плоскости", 
+                 wraplength=580, justify=tk.LEFT, foreground="#666").pack()
 
     def draw_scatter(self, parent, data):
+        for widget in parent.winfo_children():
+            widget.destroy()
+        
         canvas = tk.Canvas(parent, width=600, height=600, bg='white')
-        canvas.pack()
+        canvas.pack(pady=10)
         
         max_val = max(data) if data else 1
         for i, val in enumerate(data):
@@ -288,6 +328,11 @@ class MainApp(tk.Tk):
                 fill="#e67e22", 
                 outline="#d35400"
             )
+        
+        desc_frame = ttk.Frame(parent)
+        desc_frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(desc_frame, text="Точечный график: Каждое значение представлено точкой, положение зависит от номера и величины", 
+                 wraplength=580, justify=tk.LEFT, foreground="#666").pack()
 
     def open_2d(self):
         if self.window_2d:
@@ -296,7 +341,6 @@ class MainApp(tk.Tk):
         self.window_2d.title("2D: Ker(X*Y - X+Y)")
         self.window_2d.configure(bg='#f0f0f0')
         
-        # Получение данных
         self.db.cursor.execute("SELECT x, y, value FROM ker_values")
         raw_data = self.db.cursor.fetchall()
         self.data_2d = {}
@@ -305,83 +349,106 @@ class MainApp(tk.Tk):
                 self.data_2d[x] = {}
             self.data_2d[x][y] = v
         
-        # Панель управления
         control_frame = ttk.Frame(self.window_2d)
         control_frame.pack(fill=tk.X, padx=10, pady=10)
         
         ttk.Label(control_frame, text="Модель:").grid(row=0, column=0, padx=5)
         self.model_2d_var = tk.StringVar(value='HMM_DN')
         model_combobox = ttk.Combobox(control_frame, textvariable=self.model_2d_var, 
-                                     values=['HMM_DN'], width=15)
+                                     values=['HMM_DN', 'HMM_R'], width=15)
         model_combobox.grid(row=0, column=1, padx=5)
         
-        ttk.Label(control_frame, text="Параметр:").grid(row=0, column=2, padx=5)
-        self.param_2d_entry = ttk.Entry(control_frame, width=10)
-        self.param_2d_entry.grid(row=0, column=3, padx=5)
+        ttk.Label(control_frame, text="Параметр 1:").grid(row=0, column=2, padx=5)
+        self.param_a_entry = ttk.Entry(control_frame, width=10)
+        self.param_a_entry.grid(row=0, column=3, padx=5)
         
         ttk.Button(control_frame, text="Применить", 
-                  command=self.update_2d_viz).grid(row=0, column=4, padx=5)
+                  command=self.update_2d_viz).grid(row=0, column=6, padx=5)
         
-        # Визуализации
         self.tab_control_2d = ttk.Notebook(self.window_2d)
         
-        # Тепловая карта
         self.heatmap_frame = ttk.Frame(self.tab_control_2d)
         self.draw_heatmap(self.heatmap_frame, self.data_2d)
         self.tab_control_2d.add(self.heatmap_frame, text="Тепловая карта")
         
-        # Контурная карта
         self.contour_frame = ttk.Frame(self.tab_control_2d)
         self.draw_contour(self.contour_frame, self.data_2d)
         self.tab_control_2d.add(self.contour_frame, text="Контурная карта")
         
-        # 3D-поверхность
         self.surface_frame = ttk.Frame(self.tab_control_2d)
         self.draw_3d_surface(self.surface_frame, self.data_2d)
         self.tab_control_2d.add(self.surface_frame, text="3D-поверхность")
         
+        self.gradient_frame = ttk.Frame(self.tab_control_2d)
+        self.draw_gradient(self.gradient_frame, self.data_2d)
+        self.tab_control_2d.add(self.gradient_frame, text="Градиентная карта")
+        
         self.tab_control_2d.pack(expand=1, fill="both", padx=10, pady=10)
+        
+        self.original_data_2d = self.data_2d.copy()
+        
+        ttk.Label(control_frame, text="Параметр 2:").grid(row=0, column=4, padx=5)
+        self.param_b_entry = ttk.Entry(control_frame, width=10)
+        self.param_b_entry.grid(row=0, column=5, padx=5)
 
     def update_2d_viz(self):
         try:
             model = self.model_2d_var.get()
-            param = self.param_2d_entry.get()
+            a = int(self.param_a_entry.get())
+            b = int(self.param_b_entry.get()) if model == 'HMM_R' else 0
+            
+            x_coords = sorted(self.original_data_2d.keys())
+            y_coords = sorted({y for x in self.original_data_2d for y in self.original_data_2d[x]})
             
             if model == 'HMM_DN':
-                mod = int(param)
+                mod = a
                 if mod <= 0:
                     raise ValueError("Модуль должен быть больше 0")
                 
-                # Сохраняем исходные координаты
-                x_coords = sorted(self.data_2d.keys())
-                y_coords = sorted({y for x in self.data_2d for y in self.data_2d[x]})
-                
-                # Применяем модель с сохранением структуры данных
                 processed_data = {}
                 for x in x_coords:
                     processed_data[x] = {}
                     for y in y_coords:
-                        value = self.data_2d[x].get(y, 0)
+                        value = self.original_data_2d[x].get(y, 0)
                         processed_data[x][y] = value % mod
                 
                 self.data_2d = processed_data
                 
-                # Обновляем визуализации
-                self.clear_frame(self.heatmap_frame)
-                self.draw_heatmap(self.heatmap_frame, self.data_2d)
+            elif model == 'HMM_R':
+                matrix = []
+                for x in x_coords:
+                    row = []
+                    for y in y_coords:
+                        row.append(self.original_data_2d[x].get(y, 0))
+                    matrix.append(row)
                 
-                self.clear_frame(self.contour_frame)
-                self.draw_contour(self.contour_frame, self.data_2d)
+                processed_matrix = HMM.hmm_r(matrix, a, b)
                 
-                self.clear_frame(self.surface_frame)
-                self.draw_3d_surface(self.surface_frame, self.data_2d)
+                processed_data = {}
+                for x, row in enumerate(processed_matrix):
+                    processed_data[x] = {}
+                    for y, val in enumerate(row):
+                        processed_data[x][y] = val
+                
+                self.data_2d = processed_data
+            
+            self.draw_heatmap(self.heatmap_frame, self.data_2d)
+            self.draw_contour(self.contour_frame, self.data_2d)
+            self.draw_3d_surface(self.surface_frame, self.data_2d)
+            self.draw_gradient(self.gradient_frame, self.data_2d)
             
         except ValueError as e:
             messagebox.showerror("Ошибка", str(e))
+            
+        except ValueError:
+            messagebox.showerror("Ошибка", "Введите корректные числовые параметры")
 
     def draw_heatmap(self, parent, data):
+        for widget in parent.winfo_children():
+            widget.destroy()
+        
         canvas = tk.Canvas(parent, width=600, height=600, bg='white')
-        canvas.pack()
+        canvas.pack(pady=10)
         
         cell_size = 5
         colors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#27ae60',
@@ -396,10 +463,18 @@ class MainApp(tk.Tk):
                     (x+1)*cell_size, (y+1)*cell_size,
                     fill=color, outline=""
                 )
+        
+        desc_frame = ttk.Frame(parent)
+        desc_frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(desc_frame, text="Тепловая карта: Цветовое представление значений функции Ker(X*Y - X+Y)", 
+                 wraplength=580, justify=tk.LEFT, foreground="#666").pack()
 
     def draw_contour(self, parent, data):
+        for widget in parent.winfo_children():
+            widget.destroy()
+        
         canvas = tk.Canvas(parent, width=600, height=600, bg='white')
-        canvas.pack()
+        canvas.pack(pady=10)
         
         levels = [0, 2, 4, 6, 8]
         cell_size = 5
@@ -412,24 +487,62 @@ class MainApp(tk.Tk):
                         (x+1)*cell_size, (y+1)*cell_size,
                         fill='#34495e'
                     )
+        
+        desc_frame = ttk.Frame(parent)
+        desc_frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(desc_frame, text="Контурная карта: Изолинии для выделения областей с одинаковыми значениями", 
+                 wraplength=580, justify=tk.LEFT, foreground="#666").pack()
 
     def draw_3d_surface(self, parent, data):
-        canvas = tk.Canvas(parent, width=600, height=600, bg='white')
-        canvas.pack()
+        for widget in parent.winfo_children():
+            widget.destroy()
         
-        # Находим максимальное значение для нормализации
+        canvas = tk.Canvas(parent, width=600, height=600, bg='white')
+        canvas.pack(pady=10)
+        
         max_value = max(v for x in data for y in data[x] for v in [data[x][y]]) if data else 1
         
         cell_size = 5
         for x in data:
             for y in data[x]:
                 value = data[x][y]
-                height = (value / max_value) * 100 if max_value != 0 else 0  # Нормализация
+                height = (value / max_value) * 100 if max_value != 0 else 0
                 canvas.create_rectangle(
                     x*cell_size, 600 - y*cell_size - height,
                     (x+1)*cell_size, 600 - y*cell_size,
                     fill='#%02x%02x%02x' % (52, 152, 219)
                 )
+        
+        desc_frame = ttk.Frame(parent)
+        desc_frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(desc_frame, text="3D-поверхность: Трехмерное представление с высотой, пропорциональной значениям", 
+                 wraplength=580, justify=tk.LEFT, foreground="#666").pack()
+
+    def draw_gradient(self, parent, data):
+        for widget in parent.winfo_children():
+            widget.destroy()
+        
+        canvas = tk.Canvas(parent, width=600, height=600, bg='white')
+        canvas.pack(pady=10)
+        
+        cell_size = 5
+        max_value = max(v for x in data for y in data[x] for v in [data[x][y]]) if data else 1
+        
+        for x in data:
+            for y in data[x]:
+                value = data[x][y]
+                intensity = int((value / max_value) * 255) if max_value != 0 else 0
+                color = '#%02x%02x%02x' % (intensity, intensity, intensity)
+                canvas.create_rectangle(
+                    x*cell_size, y*cell_size,
+                    (x+1)*cell_size, (y+1)*cell_size,
+                    fill=color, outline=""
+                )
+        
+        desc_frame = ttk.Frame(parent)
+        desc_frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(desc_frame, text="Градиентная карта: Интенсивность значений отображается через градации серого цвета", 
+                 wraplength=580, justify=tk.LEFT, foreground="#666").pack()
 
     def clear_frame(self, frame):
         for widget in frame.winfo_children():
@@ -438,8 +551,8 @@ class MainApp(tk.Tk):
     def show_about(self):
         messagebox.showinfo("О программе", 
                           "Программа для хромоматематического моделирования\n"
-                          "Версия 3.0\n"
-                          "Автор: [Ваше имя]")
+                          "Версия 1.0\n"
+                          "Автор: Купреев Станислав")
 
     def show_help(self):
         messagebox.showinfo("Справка", 
