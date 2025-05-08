@@ -11,17 +11,31 @@ class DataHandler:
         for i in range(2, int(math.sqrt(n)) + 1):
             if n % i == 0: return False
         return True
+    
+    @staticmethod
+    def is_semiprime(n):
+        if n < 4: 
+            return False 
+        factors = []
+        temp = n
+        for i in range(2, int(math.sqrt(n)) + 1):
+            while temp % i == 0:
+                factors.append(i)
+                temp = temp // i
+        return (len(factors) == 2 and factors[0]*factors[1] == n) or (len(factors) == 1 and factors[0]**2 == n)
 
     @staticmethod
     def generate_semiprimes(count=1000):
         primes = [i for i in range(2, 10000) if DataHandler.is_prime(i)]
         semiprimes = []
-        for p in primes:
-            for q in primes:
-                if p*q not in semiprimes:
-                    semiprimes.append(p*q)
-                    if len(semiprimes) >= count:
-                        return sorted(semiprimes)
+        # Уникальные комбинации простых чисел
+        for i in range(len(primes)):
+            for j in range(i, len(primes)):
+                product = primes[i] * primes[j]
+                if product not in semiprimes:
+                    semiprimes.append(product)
+                if len(semiprimes) >= count:
+                    return sorted(semiprimes)
         return sorted(semiprimes)
 
     @staticmethod
@@ -139,7 +153,6 @@ class MainApp(tk.Tk):
         self.db.save_ker_values(data)
         messagebox.showinfo("Успех", "Данные успешно сгенерированы!")
 
-    # 1D Визуализации
     def open_1d(self):
         if self.window_1d:
             self.window_1d.destroy()
@@ -194,13 +207,16 @@ class MainApp(tk.Tk):
         center = 300
 
         for num in data:
+            is_semiprime = DataHandler.is_semiprime(num)
+            color = "#e74c3c" if is_semiprime else "#f0f0f0"
+        
             if -center//step < x < center//step and -center//step < y < center//step:
                 canvas.create_oval(
                     center + x*step - 3,
                     center + y*step - 3,
                     center + x*step + 3,
                     center + y*step + 3,
-                    fill="#e74c3c",
+                    fill=color, 
                     outline=""
                 )
             
@@ -226,10 +242,10 @@ class MainApp(tk.Tk):
         desc_frame = ttk.Frame(main_frame)
         desc_frame.pack(fill=tk.X, padx=10, pady=5)
         text = """Спираль Улама для полупростых чисел:
-- Числа расположены по спирали от центра
-- Красные точки представляют полупростые числа
-- Параметр 'N' (модуль) фильтрует значения
-- Параметр 'B' (база) изменяет группировку"""
+            - Числа расположены по спирали от центра
+            - Красные точки представляют полупростые числа
+            - Параметр 'N' (модуль) фильтрует значения
+            - Параметр 'B' (база) изменяет группировку"""
         ttk.Label(desc_frame, text=text, wraplength=580, justify=tk.LEFT).pack()
 
     def draw_pie_chart(self, parent, data):
@@ -266,10 +282,10 @@ class MainApp(tk.Tk):
         desc_frame = ttk.Frame(main_frame)
         desc_frame.pack(fill=tk.X, padx=10, pady=5)
         text = """Круговая диаграмма распределения:
-- Показывает распределение чисел по модулю
-- Каждый сектор соответствует остатку от деления
-- Размер сектора пропорционален количеству чисел
-- Изменение параметра 'N' меняет количество секторов"""
+            - Показывает распределение чисел по модулю
+            - Каждый сектор соответствует остатку от деления
+            - Размер сектора пропорционален количеству чисел
+            - Изменение параметра 'N' меняет количество секторов"""
         ttk.Label(desc_frame, text=text, wraplength=580, justify=tk.LEFT).pack()
 
     def open_2d(self):
@@ -353,10 +369,10 @@ class MainApp(tk.Tk):
         desc_frame = ttk.Frame(main_frame)
         desc_frame.pack(fill=tk.X, padx=10, pady=5)
         text = """Тепловая карта значений Ker(XY - X+Y):
-- Каждая ячейка соответствует координатам (X,Y)
-- Цвет определяется значением ядра Ker
-- Параметр 'N' изменяет модуль для цветового кодирования
-- Параметры 'a' и 'b' управляют линейными преобразованиями"""
+            - Каждая ячейка соответствует координатам (X,Y)
+            - Цвет определяется значением ядра Ker
+            - Параметр 'N' изменяет модуль для цветового кодирования
+            - Параметры 'a' и 'b' управляют линейными преобразованиями"""
         ttk.Label(desc_frame, text=text, wraplength=580, justify=tk.LEFT).pack()
 
     def draw_contour(self, parent, data):
@@ -431,7 +447,7 @@ class MainApp(tk.Tk):
 
     def show_about(self):
         messagebox.showinfo("О программе", 
-                          "Программа для хромоматематического моделирования\nВерсия 2.1\nАвтор: Купреев Станислав")
+                          "Программа для хромоматематического моделирования\nВерсия 1.0\nАвтор: Купреев С.С.")
 
     def show_help(self):
         messagebox.showinfo("Справка", 
