@@ -28,7 +28,7 @@ class DataHandler:
     def generate_semiprimes(count=1000):
         primes = [i for i in range(2, 10000) if DataHandler.is_prime(i)]
         semiprimes = []
-        # Уникальные комбинации простых чисел
+
         for i in range(len(primes)):
             for j in range(i, len(primes)):
                 product = primes[i] * primes[j]
