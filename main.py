@@ -7,6 +7,7 @@ import os
 class DataHandler:
     @staticmethod
     def is_prime(n):
+        """Проверка числа на простоту"""
         if n < 2: return False
         for i in range(2, int(math.sqrt(n)) + 1):
             if n % i == 0: return False
@@ -14,8 +15,8 @@ class DataHandler:
     
     @staticmethod
     def is_semiprime(n):
-        if n < 4: 
-            return False 
+        """Проверка числа на полупростоту (произведение двух простых)"""
+        if n < 4: return False
         factors = []
         temp = n
         for i in range(2, int(math.sqrt(n)) + 1):
@@ -26,9 +27,9 @@ class DataHandler:
 
     @staticmethod
     def generate_semiprimes(count=1000):
+        """Генерация полупростых чисел"""
         primes = [i for i in range(2, 10000) if DataHandler.is_prime(i)]
         semiprimes = []
-
         for i in range(len(primes)):
             for j in range(i, len(primes)):
                 product = primes[i] * primes[j]
@@ -40,6 +41,7 @@ class DataHandler:
 
     @staticmethod
     def ker(a):
+        """Вычисление ядра числа (рекурсивная сумма цифр)"""
         a = abs(a)
         while a >= 10:
             a = sum(int(d) for d in str(a))
@@ -53,36 +55,44 @@ class Database:
         self.create_tables()
 
     def create_tables(self):
+        """Создание таблиц БД"""
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS semiprimes (value INTEGER)''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS ker_values (x INTEGER, y INTEGER, value INTEGER)''')
         self.conn.commit()
 
     def save_semiprimes(self, data):
+        """Сохранение полупростых чисел"""
         self.cursor.execute('DELETE FROM semiprimes')
         self.cursor.executemany('INSERT INTO semiprimes VALUES (?)', [(x,) for x in data])
         self.conn.commit()
 
     def save_ker_values(self, data):
+        """Сохранение значений Ker"""
         self.cursor.execute('DELETE FROM ker_values')
         self.cursor.executemany('INSERT INTO ker_values VALUES (?, ?, ?)', 
                                [(x, y, v) for x, row in enumerate(data) for y, v in enumerate(row)])
         self.conn.commit()
 
 class HMM:
+    """Хромоматематические модели"""
     @staticmethod
     def hmm_n(data, mod):
+        """Модульная арифметика: data[i] % mod"""
         return [x % mod for x in data]
 
     @staticmethod
     def hmm_b(data, base):
+        """Биградиентная модель: data[i] // base"""
         return [x // base for x in data]
 
     @staticmethod
     def hmm_dn(data, mod):
+        """Дискретная модель для 2D: каждая ячейка % mod"""
         return [[v % mod for v in row] for row in data]
 
     @staticmethod
     def hmm_r(data, a, b):
+        """Мультиградиентная модель: (a*x + b*y) % 10"""
         return [[(a * x + b * y) % 10 for y in row] for x, row in enumerate(data)]
 
 class MainApp(tk.Tk):
@@ -101,20 +111,19 @@ class MainApp(tk.Tk):
         self.window_2d = None
 
     def create_welcome_screen(self):
+        """Экран приветствия с описанием"""
         main_frame = ttk.Frame(self)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
         description = """Программа для хромоматематического моделирования
 
         1. Объект 1D: Полупростые числа
-        Визуализации:
-        - Спираль Улама
-        - Круговая диаграмма
+        - Числа вида p*q, где p и q - простые
+        - Визуализации: спираль Улама, круговая диаграмма
 
         2. Объект 2D: Ker(X*Y - X+Y)
-        Визуализации:
-        - Тепловая карта
-        - Контурная карта"""
+        - Ker(a) - сумма цифр до однозначного числа
+        - Визуализации: тепловая карта, контурная карта"""
         
         text = tk.Text(main_frame, wrap=tk.WORD, font=('Arial', 12), padx=10, pady=10, height=25)
         text.insert(tk.END, description)
@@ -122,6 +131,7 @@ class MainApp(tk.Tk):
         text.pack(fill=tk.BOTH, expand=True)
 
     def create_menu(self):
+        """Создание меню"""
         menu = tk.Menu(self)
         
         data_menu = tk.Menu(menu, tearoff=0)
@@ -141,6 +151,7 @@ class MainApp(tk.Tk):
         self.config(menu=menu)
 
     def generate_data(self):
+        """Генерация данных"""
         semiprimes = DataHandler.generate_semiprimes(1000)
         self.db.save_semiprimes(semiprimes)
         
@@ -153,7 +164,9 @@ class MainApp(tk.Tk):
         self.db.save_ker_values(data)
         messagebox.showinfo("Успех", "Данные успешно сгенерированы!")
 
+    # 1D Визуализации
     def open_1d(self):
+        """Окно 1D визуализаций"""
         if self.window_1d:
             self.window_1d.destroy()
         self.window_1d = tk.Toplevel(self)
@@ -167,7 +180,8 @@ class MainApp(tk.Tk):
         
         ttk.Label(control_frame, text="Модель:").grid(row=0, column=0, padx=5)
         self.model_1d_var = tk.StringVar(value='HMM_N')
-        model_combobox = ttk.Combobox(control_frame, textvariable=self.model_1d_var, values=['HMM_N', 'HMM_B'], width=15)
+        model_combobox = ttk.Combobox(control_frame, textvariable=self.model_1d_var, 
+                                    values=['HMM_N', 'HMM_B'], width=15)
         model_combobox.grid(row=0, column=1, padx=5)
         
         ttk.Label(control_frame, text="Параметр:").grid(row=0, column=2, padx=5)
@@ -189,6 +203,7 @@ class MainApp(tk.Tk):
         self.tab_control_1d.pack(expand=1, fill="both", padx=10, pady=10)
 
     def draw_ulam_spiral(self, parent, data):
+        """Отрисовка спирали Улама"""
         for widget in parent.winfo_children():
             widget.destroy()
         
@@ -241,14 +256,15 @@ class MainApp(tk.Tk):
         
         desc_frame = ttk.Frame(main_frame)
         desc_frame.pack(fill=tk.X, padx=10, pady=5)
-        text = """Спираль Улама для полупростых чисел:
-            - Числа расположены по спирали от центра
-            - Красные точки представляют полупростые числа
-            - Параметр 'N' (модуль) фильтрует значения
-            - Параметр 'B' (база) изменяет группировку"""
+        text = """Спираль Улама:
+• Числа расположены по спирали от центра
+• Красные точки - полупростые числа (p*q)
+• Параметр N: остаток от деления чисел на модуль
+• Параметр B: группировка чисел по диапазонам"""
         ttk.Label(desc_frame, text=text, wraplength=580, justify=tk.LEFT).pack()
 
     def draw_pie_chart(self, parent, data):
+        """Круговая диаграмма распределения"""
         for widget in parent.winfo_children():
             widget.destroy()
         
@@ -281,14 +297,15 @@ class MainApp(tk.Tk):
         
         desc_frame = ttk.Frame(main_frame)
         desc_frame.pack(fill=tk.X, padx=10, pady=5)
-        text = """Круговая диаграмма распределения:
-            - Показывает распределение чисел по модулю
-            - Каждый сектор соответствует остатку от деления
-            - Размер сектора пропорционален количеству чисел
-            - Изменение параметра 'N' меняет количество секторов"""
+        text = """Круговая диаграмма:
+• Показывает распределение по модулю N
+• Каждый сектор - остаток от деления
+• Размер сектора - доля чисел
+• Изменение N меняет количество секторов"""
         ttk.Label(desc_frame, text=text, wraplength=580, justify=tk.LEFT).pack()
 
     def open_2d(self):
+        """Окно 2D визуализаций"""
         if self.window_2d:
             self.window_2d.destroy()
         self.window_2d = tk.Toplevel(self)
@@ -305,7 +322,8 @@ class MainApp(tk.Tk):
         
         ttk.Label(control_frame, text="Модель:").grid(row=0, column=0, padx=5)
         self.model_2d_var = tk.StringVar(value='HMM_DN')
-        model_combobox = ttk.Combobox(control_frame, textvariable=self.model_2d_var, values=['HMM_DN', 'HMM_R'], width=15)
+        model_combobox = ttk.Combobox(control_frame, textvariable=self.model_2d_var, 
+                                     values=['HMM_DN', 'HMM_R'], width=15)
         model_combobox.grid(row=0, column=1, padx=5)
         
         ttk.Label(control_frame, text="Параметр 1:").grid(row=0, column=2, padx=5)
@@ -331,6 +349,7 @@ class MainApp(tk.Tk):
         self.tab_control_2d.pack(expand=1, fill="both", padx=10, pady=10)
 
     def draw_heatmap(self, parent, data):
+        """Тепловая карта"""
         for widget in parent.winfo_children():
             widget.destroy()
         
@@ -341,15 +360,22 @@ class MainApp(tk.Tk):
         canvas.pack(pady=10)
         
         color_map = {
-            0: '#2ecc71', 1: '#3498db',
-            2: '#e74c3c', 3: '#f1c40f',
-            4: '#9b59b6', 5: '#34495e'
+            0: '#2ecc71',
+            1: '#3498db',
+            2: '#e74c3c',
+            3: '#f1c40f',
+            4: '#9b59b6',
+            5: '#34495e',
+            6: '#FF00FF',
+            7: '#00FFFF',
+            8: '#FFA500',
+            9: '#808080' 
         }
         
         cell_size = 6
         for x in range(100):
             for y in range(100):
-                value = data[x][y] % 6
+                value = data[x][y]  
                 color = color_map.get(value, '#ffffff')
                 canvas.create_rectangle(
                     x*cell_size, y*cell_size,
@@ -360,22 +386,34 @@ class MainApp(tk.Tk):
         legend_frame = ttk.Frame(main_frame)
         legend_frame.pack(pady=5)
         ttk.Label(legend_frame, text="Цветовая карта Ker:", font=('Arial', 9, 'bold')).pack()
-        for value, color in color_map.items():
-            frame = ttk.Frame(legend_frame)
+        
+        row1 = ttk.Frame(legend_frame)
+        row1.pack()
+        for value in range(5):
+            frame = ttk.Frame(row1)
             frame.pack(side=tk.LEFT, padx=2)
-            tk.Canvas(frame, width=20, height=20, bg=color).pack()
+            tk.Canvas(frame, width=20, height=20, bg=color_map[value]).pack()
+            ttk.Label(frame, text=f"{value}").pack()
+        
+        row2 = ttk.Frame(legend_frame)
+        row2.pack()
+        for value in range(5, 10):
+            frame = ttk.Frame(row2)
+            frame.pack(side=tk.LEFT, padx=2)
+            tk.Canvas(frame, width=20, height=20, bg=color_map[value]).pack()
             ttk.Label(frame, text=f"{value}").pack()
         
         desc_frame = ttk.Frame(main_frame)
         desc_frame.pack(fill=tk.X, padx=10, pady=5)
-        text = """Тепловая карта значений Ker(XY - X+Y):
-            - Каждая ячейка соответствует координатам (X,Y)
-            - Цвет определяется значением ядра Ker
-            - Параметр 'N' изменяет модуль для цветового кодирования
-            - Параметры 'a' и 'b' управляют линейными преобразованиями"""
+        text = """Тепловая карта:
+            • Ячейка (X,Y) = Ker(X*Y - X+Y)
+            • Цвет зависит от значения Ker (0-9)
+            • Параметр N: модуль для цветового преобразования
+            • Параметры a,b: линейные преобразования"""
         ttk.Label(desc_frame, text=text, wraplength=580, justify=tk.LEFT).pack()
 
     def draw_contour(self, parent, data):
+        """Контурная карта"""
         for widget in parent.winfo_children():
             widget.destroy()
         
@@ -406,14 +444,15 @@ class MainApp(tk.Tk):
         
         desc_frame = ttk.Frame(main_frame)
         desc_frame.pack(fill=tk.X, padx=10, pady=5)
-        text = """Контурная карта ключевых значений:
-- Выделяет ячейки с определенными уровнями Ker
-- Серым цветом показаны значения: 0, 2, 4, 6, 8
-- Параметр 'N' изменяет пороговые уровни
-- Параметр точности регулирует детализацию"""
+        text = """Контурная карта:
+            • Выделяет ключевые значения Ker
+            • Серые ячейки: 0,2,4,6,8
+            • Параметр N: пороговые уровни
+            • Параметр точности: детализация"""
         ttk.Label(desc_frame, text=text, wraplength=580, justify=tk.LEFT).pack()
 
     def update_1d_viz(self):
+        """Обновление 1D визуализаций"""
         try:
             model = self.model_1d_var.get()
             param = int(self.param_1d_entry.get())
@@ -429,6 +468,7 @@ class MainApp(tk.Tk):
             messagebox.showerror("Ошибка", "Некорректный параметр")
 
     def update_2d_viz(self):
+        """Обновление 2D визуализаций"""
         try:
             model = self.model_2d_var.get()
             a = int(self.param_a_entry.get())
@@ -446,14 +486,32 @@ class MainApp(tk.Tk):
             messagebox.showerror("Ошибка", "Некорректные параметры")
 
     def show_about(self):
+        """О программе"""
         messagebox.showinfo("О программе", 
-                          "Программа для хромоматематического моделирования\nВерсия 1.0\nАвтор: Купреев С.С.")
+                          "Хромоматематическое моделирование\nВерсия 3.0\n"
+                          "Автор: Купреев С.С.\n\n"
+                          "Методы:\n"
+                          "- Спираль Улама\n"
+                          "- Тепловые карты\n"
+                          "- Контурный анализ")
 
     def show_help(self):
-        messagebox.showinfo("Справка", 
-                          "1. Сгенерируйте данные через меню 'Данные'\n"
-                          "2. Выберите форму для визуализации\n"
-                          "3. Используйте параметры для настройки моделей")
+        """Справка"""
+        help_text = """Инструкция:
+1. Генерация данных: создает 1000 полупростых чисел и значения Ker.
+2. 1D визуализации:
+   - Спираль Улама: красные точки - полупростые числа
+   - Круговая диаграмма: распределение по модулю
+   - Параметры: 
+     * N (модуль): 0-9
+     * B (база): группировка чисел
+3. 2D визуализации:
+   - Тепловая карта: цветовая кодировка Ker
+   - Контурная карта: выделение уровней
+   - Параметры:
+     * N (модуль): 2-10
+     * a,b: коэффициенты преобразований"""
+        messagebox.showinfo("Справка", help_text)
 
 if __name__ == "__main__":
     app = MainApp()
